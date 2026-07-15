@@ -1,10 +1,10 @@
 """
-Dashboard Bursa Komoditi - Streamlit App
-==========================================
-Baca langsung dari commodity_dashboard.db (SQLite) yang dibuat oleh
-generate_data.py. Tema gelap (background hitam), chart Plotly.
+Commodity Exchange Dashboard - Streamlit App
+==============================================
+Reads directly from commodity_dashboard.db (SQLite) built by
+generate_data.py. Dark theme (black background), Plotly charts.
 
-Jalankan: streamlit run dashboard.py
+Run: streamlit run dashboard.py
 """
 
 import sqlite3
@@ -31,7 +31,7 @@ DOWN = "#f87171"        # red
 SERIES_COLORS = ["#22d3ee", "#f59e0b", "#a78bfa", "#34d399", "#f87171", "#60a5fa"]
 
 st.set_page_config(
-    page_title="Dashboard Bursa Komoditi",
+    page_title="Commodity Exchange Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -108,27 +108,27 @@ def dark_layout(fig, height=420, title=None):
 data = load_tables()
 if data is None:
     st.error(
-        f"Database tidak ditemukan di `{DB_PATH}`. "
-        "Jalankan `python generate_data.py` dulu untuk membuatnya."
+        f"Database not found at `{DB_PATH}`. "
+        "Run `python generate_data.py` first to create it."
     )
     st.stop()
 
 commodity_df, broker_df, market_df, tx_df = data
 
 # ------------------------------------------------------------
-# Sidebar - filter
+# Sidebar - filters
 # ------------------------------------------------------------
-st.sidebar.title("📊 Filter")
+st.sidebar.title("📊 Filters")
 
 commodities = sorted(market_df["commodity_name"].unique())
 selected_commodities = st.sidebar.multiselect(
-    "Komoditi", commodities, default=commodities
+    "Commodity", commodities, default=commodities
 )
 
 min_date = market_df["full_date"].min().date()
 max_date = market_df["full_date"].max().date()
 date_range = st.sidebar.date_input(
-    "Rentang tanggal", value=(min_date, max_date), min_value=min_date, max_value=max_date
+    "Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date
 )
 if isinstance(date_range, tuple) and len(date_range) == 2:
     start_date, end_date = date_range
@@ -138,7 +138,7 @@ else:
 ma_window = st.sidebar.selectbox("Moving average", [7, 14, 30], index=2)
 
 if not selected_commodities:
-    st.warning("Pilih minimal satu komoditi di sidebar.")
+    st.warning("Select at least one commodity in the sidebar.")
     st.stop()
 
 mask_m = (
@@ -158,10 +158,10 @@ tx = tx_df.loc[mask_t].copy()
 # ------------------------------------------------------------
 # Header + KPI
 # ------------------------------------------------------------
-st.title("Dashboard Bursa Komoditi")
+st.title("Commodity Exchange Dashboard")
 st.caption(
-    "Harga & volume dari yfinance (data riil) · transaksi pialang adalah "
-    "**data simulasi** untuk keperluan demo dashboard."
+    "Price & volume from yfinance (real data) · broker transactions are "
+    "**simulated data** for dashboard demo purposes."
 )
 
 kpi_cols = st.columns(4)
@@ -178,17 +178,17 @@ total_tx_value = float(tx["transaction_value"].sum())
 n_days = mkt["full_date"].nunique()
 avg_close = mkt.groupby("commodity_name")["close_price"].last().mean()
 
-kpi_cols[0].metric("Total volume (periode)", f"{total_volume:,}")
-kpi_cols[1].metric("Total nilai transaksi (Rp/USD proxy)", f"{total_tx_value:,.0f}")
-kpi_cols[2].metric("Hari trading tercakup", f"{n_days:,}")
-kpi_cols[3].metric("Rata-rata harga penutupan terakhir", f"{avg_close:,.2f}")
+kpi_cols[0].metric("Total volume (period)", f"{total_volume:,}")
+kpi_cols[1].metric("Total transaction value (USD proxy)", f"{total_tx_value:,.0f}")
+kpi_cols[2].metric("Trading days covered", f"{n_days:,}")
+kpi_cols[3].metric("Avg. latest close price", f"{avg_close:,.2f}")
 
 st.divider()
 
 # ------------------------------------------------------------
-# 1. Trend harga + moving average
+# 1. Price trend + moving average
 # ------------------------------------------------------------
-st.subheader("Tren Harga & Moving Average")
+st.subheader("Price Trend & Moving Average")
 
 fig = go.Figure()
 for i, name in enumerate(selected_commodities):
@@ -212,12 +212,12 @@ dark_layout(fig, height=460)
 st.plotly_chart(fig, width='stretch')
 
 # ------------------------------------------------------------
-# 2. Volume harian
+# 2. Daily volume
 # ------------------------------------------------------------
 vcol, rcol = st.columns([3, 2])
 
 with vcol:
-    st.subheader("Volume Transaksi Harian")
+    st.subheader("Daily Trading Volume")
     fig_v = go.Figure()
     for i, name in enumerate(selected_commodities):
         sub = mkt[mkt["commodity_name"] == name].sort_values("full_date")
@@ -232,10 +232,10 @@ with vcol:
     st.plotly_chart(fig_v, width='stretch')
 
 # ------------------------------------------------------------
-# 3. Ranking pialang
+# 3. Broker ranking
 # ------------------------------------------------------------
 with rcol:
-    st.subheader("Ranking Pialang (volume)")
+    st.subheader("Broker Ranking (volume)")
     broker_rank = (
         tx.groupby(["broker_name", "broker_tier"])["transaction_volume"]
         .sum()
@@ -259,9 +259,9 @@ with rcol:
 st.divider()
 
 # ------------------------------------------------------------
-# 4. Konsentrasi pasar (HHI) per bulan
+# 4. Market concentration (HHI) per month
 # ------------------------------------------------------------
-st.subheader("Konsentrasi Pasar (HHI) per Bulan")
+st.subheader("Market Concentration (HHI) by Month")
 
 tx["year_month"] = tx["full_date"].dt.to_period("M").astype(str)
 monthly = (
@@ -291,7 +291,7 @@ for i, name in enumerate(selected_commodities):
         )
     )
 fig_h.add_hline(y=2500, line_dash="dot", line_color=DOWN,
-                 annotation_text="ambang konsentrasi tinggi (2500)",
+                 annotation_text="high concentration threshold (2500)",
                  annotation_font_color=MUTED)
 dark_layout(fig_h, height=380)
 st.plotly_chart(fig_h, width='stretch')
@@ -299,9 +299,9 @@ st.plotly_chart(fig_h, width='stretch')
 st.divider()
 
 # ------------------------------------------------------------
-# 5. Anomali: volume melonjak, harga stagnan
+# 5. Anomaly: volume spike, stagnant price
 # ------------------------------------------------------------
-st.subheader("Anomali: Volume Melonjak vs Harga")
+st.subheader("Anomaly: Volume Spike vs. Price")
 
 anomalies = []
 for name in selected_commodities:
@@ -318,21 +318,21 @@ if not anomaly_df.empty:
     ]
     show["full_date"] = show["full_date"].dt.date
     show = show.rename(columns={
-        "commodity_name": "Komoditi", "full_date": "Tanggal", "total_volume": "Volume",
-        "avg_volume_30d": "Rata2 Volume 30h", "volume_ratio": "Rasio Volume", "close_price": "Harga Close",
+        "commodity_name": "Commodity", "full_date": "Date", "total_volume": "Volume",
+        "avg_volume_30d": "Avg. 30d Volume", "volume_ratio": "Volume Ratio", "close_price": "Close Price",
     })
     st.dataframe(
         show.style.format({
-            "Volume": "{:,.0f}", "Rata2 Volume 30h": "{:,.0f}",
-            "Rasio Volume": "{:.2f}x", "Harga Close": "{:,.2f}",
+            "Volume": "{:,.0f}", "Avg. 30d Volume": "{:,.0f}",
+            "Volume Ratio": "{:.2f}x", "Close Price": "{:,.2f}",
         }),
         width='stretch',
         hide_index=True,
     )
 else:
-    st.info("Tidak ada anomali volume (>1.5x rata-rata 30 hari) di rentang/filter ini.")
+    st.info("No volume anomalies (>1.5x the 30-day average) in this range/filter.")
 
 st.caption(
-    "Dibangun dengan Streamlit + Plotly + pandas + SQLite. "
-    "Data harga: Yahoo Finance (yfinance). Data transaksi pialang: simulasi."
+    "Built with Streamlit + Plotly + pandas + SQLite. "
+    "Price data: Yahoo Finance (yfinance). Broker transaction data: simulated."
 )
