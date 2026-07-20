@@ -1,86 +1,88 @@
-# Dashboard Bursa Komoditi
+# Commodity Exchange Dashboard
 
-Dashboard interaktif harga & volume komoditi (Crude Oil, Gold, Corn, Coffee)
-dengan tema gelap, dibangun pakai Python (Streamlit + pandas + Plotly) di
-atas database SQLite.
+An interactive dark-themed dashboard for commodity price & volume
+(Crude Oil, Gold, Corn, Coffee), built with Python (Streamlit + pandas +
+Plotly) on top of a SQLite database.
 
-## Cara menjalankan
+## Getting started
 
 ```bash
 pip install -r requirements.txt
-python generate_data.py      # bikin commodity_dashboard.db (sekali saja / refresh data)
-streamlit run dashboard.py   # buka dashboard di http://localhost:8501
+python generate_data.py      # builds commodity_dashboard.db (one-off / data refresh)
+streamlit run dashboard.py   # opens the dashboard at http://localhost:8501
 ```
 
-`generate_data.py` menghasilkan `commodity_dashboard.db` (SQLite) berisi 5
-tabel sesuai `schema.sql`. Database ini sudah disertakan di repo supaya
-dashboard bisa langsung dijalankan tanpa perlu tarik ulang data dulu.
+`generate_data.py` produces `commodity_dashboard.db` (SQLite) with 5
+tables matching `schema.sql`. The database is already committed to this
+repo, so the dashboard can run immediately without re-pulling data first.
 
-## Isi dashboard (`dashboard.py`)
+## What's in the dashboard (`dashboard.py`)
 
-- Tren harga + moving average (7/14/30 hari), per komoditi
-- Volume transaksi harian
-- Ranking pialang berdasarkan volume
-- Konsentrasi pasar (HHI) per bulan
-- Anomali: volume melonjak vs harga stagnan
+- Price trend + moving average (7/14/30-day), per commodity
+- Daily trading volume
+- Broker ranking by volume
+- Market concentration (HHI) by month
+- Anomaly detection: volume spikes vs. stagnant price
 
-Filter komoditi & rentang tanggal ada di sidebar.
+Commodity and date-range filters live in the sidebar.
 
-## Yang sudah divalidasi (end-to-end, dengan akses internet)
+## What's been validated (end-to-end, with internet access)
 
-- `schema.sql` — dieksekusi tanpa error, semua tabel/index kebentuk.
-- `generate_data.py` — dijalankan penuh sampai `commodity_dashboard.db`
-  terisi: 1656 baris `dim_date`, 4544 baris `fact_market_daily` (data
-  riil dari yfinance untuk CL=F, GC=F, ZC=F, KC=F), 27264 baris
-  `fact_broker_transaction`. Total volume broker per hari cocok persis
-  dengan `total_volume` di `fact_market_daily`.
-- **Bug ditemukan & diperbaiki**: `yf.download()` versi terbaru selalu
-  mengembalikan kolom `MultiIndex` (Price, Ticker) walau cuma satu
-  ticker yang diminta — ini bikin `row["Open"]` gagal. Sudah difix di
-  `fetch_and_load_market_data()` dengan meratakan kolom pakai
-  `hist.columns.get_level_values(0)` sebelum diproses.
-- Kelima query di `sample_queries.sql` — pola query yang sama dipakai
-  ulang di `dashboard.py` (moving average, volatilitas, ranking pialang,
-  HHI, anomali volume) dan sudah dites lewat `streamlit.testing.v1.AppTest`
-  tanpa exception.
-- `dashboard.py` — dijalankan lokal (`streamlit run`), merespons HTTP 200,
-  dan lolos `AppTest` (semua chart/metric render, tanpa exception atau
-  deprecation warning).
+- `schema.sql` — executes with no errors, all tables/indexes created.
+- `generate_data.py` — run fully to populate `commodity_dashboard.db`:
+  1,656 `dim_date` rows, 4,544 `fact_market_daily` rows (real data from
+  yfinance for CL=F, GC=F, ZC=F, KC=F), 27,264 `fact_broker_transaction`
+  rows. Daily broker volume totals match `total_volume` in
+  `fact_market_daily` exactly.
+- **Bug found & fixed**: current versions of `yf.download()` always
+  return `MultiIndex` columns (Price, Ticker) even for a single ticker,
+  which broke `row["Open"]`. Fixed in `fetch_and_load_market_data()` by
+  flattening the columns with `hist.columns.get_level_values(0)` before
+  processing.
+- The five queries in `sample_queries.sql` — the same query patterns are
+  reused in `dashboard.py` (moving average, volatility, broker ranking,
+  HHI, volume anomalies) and have been tested via
+  `streamlit.testing.v1.AppTest` with no exceptions.
+- `dashboard.py` — run locally (`streamlit run`), responds HTTP 200, and
+  passes `AppTest` (every chart/metric renders, no exceptions or
+  deprecation warnings).
 
-## Langkah selanjutnya (belum saya buatkan, sengaja)
+## Next steps (intentionally left for you)
 
-1. **Buka di Power BI**: Get Data > SQLite database driver (perlu install
-   ODBC driver SQLite dulu kalau belum ada) > pilih `commodity_dashboard.db`.
-2. **Bangun relasi** di Power BI Model view: `dim_date`, `dim_commodity`,
-   `dim_broker` ke kedua fact table lewat foreign key masing-masing.
-3. **Bikin measure DAX** berdasarkan query di `sample_queries.sql` — jangan
-   copy-paste SQL langsung ke DAX, itu bahasa beda. Pakai query SQL ini
-   sebagai referensi LOGIKA-nya, lalu terjemahkan ke DAX (ini bagian
-   pembelajaran yang saya sebut sebelumnya: DAX row context vs filter
-   context).
-4. **Desain dashboard interaktif**: minimal ada slicer per komoditi dan
-   rentang tanggal, satu visual trend harga + moving average, satu
-   visual ranking broker, satu visual HHI/konsentrasi pasar.
+1. **Open in Power BI**: Get Data > SQLite database driver (install the
+   SQLite ODBC driver first if you don't have it) > select
+   `commodity_dashboard.db`.
+2. **Build relationships** in Power BI's Model view: `dim_date`,
+   `dim_commodity`, `dim_broker` to both fact tables via their foreign
+   keys.
+3. **Write DAX measures** based on the queries in `sample_queries.sql` —
+   don't copy-paste the SQL straight into DAX, they're different
+   languages. Use these SQL queries as a reference for the *logic*, then
+   translate that into DAX (this is the DAX row-context-vs-filter-context
+   learning step mentioned earlier).
+4. **Design an interactive dashboard**: at minimum, a commodity slicer
+   and a date-range slicer, one price-trend + moving-average visual, one
+   broker-ranking visual, one HHI/market-concentration visual.
 
-Saya sengaja tidak buatkan langkah Power BI-nya karena itu bagian yang
-harus kamu kerjakan sendiri untuk benar-benar belajar DAX dan desain
-dashboard interaktif — kalau saya buatkan semuanya, kamu cuma akan
-paham SQL-nya tapi nggak dapat repetisi yang dibutuhkan untuk kuasai
+The Power BI steps are left undone on purpose — that's the part you
+should work through yourself to actually learn DAX and interactive
+dashboard design. Handing you a finished version would leave you with
+SQL knowledge but none of the repetition needed to get comfortable with
 Power BI.
 
-## Deploy supaya bisa diakses publik (gratis)
+## Deploying for public access (free)
 
-Repo ini publik di GitHub, jadi kodenya sudah bisa diakses siapa saja.
-Untuk dapat **URL dashboard yang live** (bukan cuma kode), pakai
-Streamlit Community Cloud — gratis, tanpa perlu server sendiri:
+This repo is public on GitHub, so the code is already accessible to
+anyone. To get a **live dashboard URL** (not just the code), use
+Streamlit Community Cloud — free, no server of your own required:
 
-1. Buka [share.streamlit.io](https://share.streamlit.io) dan login pakai
-   akun GitHub kamu (akun yang sama dengan yang dipakai push repo ini).
-2. Klik **New app** > pilih repo ini > branch `main` > main file path
-   `dashboard.py`.
-3. Klik **Deploy**. Dalam 1-2 menit kamu dapat URL publik bentuk
-   `https://<nama-app>.streamlit.app` yang bisa dibagikan ke siapa saja.
-4. Database `commodity_dashboard.db` sudah ikut ter-commit di repo, jadi
-   app langsung jalan tanpa setup tambahan. Kalau mau data harga
-   ter-update, jalankan ulang `python generate_data.py` di lokal, commit,
-   push — Streamlit Cloud otomatis redeploy.
+1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in
+   with your GitHub account (the same one used to push this repo).
+2. Click **New app** > select this repo > branch `master` > main file
+   path `dashboard.py`.
+3. Click **Deploy**. Within 1-2 minutes you'll get a public URL like
+   `https://<app-name>.streamlit.app` that you can share with anyone.
+4. `commodity_dashboard.db` is already committed to the repo, so the app
+   runs with no extra setup. To refresh the price data, run
+   `python generate_data.py` locally, commit, and push — Streamlit Cloud
+   redeploys automatically.
