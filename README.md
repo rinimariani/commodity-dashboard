@@ -4,6 +4,14 @@ An interactive dark-themed dashboard for commodity price & volume
 (Crude Oil, Gold, Corn, Coffee), built with Python (Streamlit + pandas +
 Plotly) on top of a SQLite database.
 
+## Preview
+
+![Overview: KPIs and price trend with moving average](screenshots/overview.png)
+
+![Daily volume, broker ranking, and monthly HHI market concentration](screenshots/volume-broker-hhi.png)
+
+![HHI concentration detail and the volume-spike anomaly table](screenshots/hhi-anomaly-table.png)
+
 ## Getting started
 
 ```bash
