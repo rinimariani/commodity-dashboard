@@ -47,29 +47,6 @@ Commodity and date-range filters live in the sidebar.
   passes `AppTest` (every chart/metric renders, no exceptions or
   deprecation warnings).
 
-## Next steps (intentionally left for you)
-
-1. **Open in Power BI**: Get Data > SQLite database driver (install the
-   SQLite ODBC driver first if you don't have it) > select
-   `commodity_dashboard.db`.
-2. **Build relationships** in Power BI's Model view: `dim_date`,
-   `dim_commodity`, `dim_broker` to both fact tables via their foreign
-   keys.
-3. **Write DAX measures** based on the queries in `sample_queries.sql` —
-   don't copy-paste the SQL straight into DAX, they're different
-   languages. Use these SQL queries as a reference for the *logic*, then
-   translate that into DAX (this is the DAX row-context-vs-filter-context
-   learning step mentioned earlier).
-4. **Design an interactive dashboard**: at minimum, a commodity slicer
-   and a date-range slicer, one price-trend + moving-average visual, one
-   broker-ranking visual, one HHI/market-concentration visual.
-
-The Power BI steps are left undone on purpose — that's the part you
-should work through yourself to actually learn DAX and interactive
-dashboard design. Handing you a finished version would leave you with
-SQL knowledge but none of the repetition needed to get comfortable with
-Power BI.
-
 ## Deploying for public access (free)
 
 This repo is public on GitHub, so the code is already accessible to
